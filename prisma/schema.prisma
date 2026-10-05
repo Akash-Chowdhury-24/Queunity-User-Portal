@@ -514,31 +514,36 @@ model Student {
   id          String   @id @default(uuid())
   firstName   String
   lastName    String
-  dateOfBirth DateTime @db.Date
+  dateOfBirth DateTime? @db.Date
   email       String   @unique
-  gender      Gender
+  gender      Gender?
   photoUrl    String?
+    
+  passwordHash String
+  resetPasswordTokenHash      String?   @unique
+  resetPasswordTokenExpiresAt DateTime?
 
+  above8Years   Boolean @default(false)
 
-  admissionYear Int
+  admissionYear Int?
   publicId      String @unique
 
-  grade   Grade  @relation(fields: [gradeId], references: [id])
-  gradeId String
+  grade   Grade?  @relation(fields: [gradeId], references: [id])
+  gradeId String?
 
-  school   School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  schoolId String
+  school   School? @relation(fields: [schoolId], references: [id], onDelete: SetNull)
+  schoolId String?
 
-  parentId String
-  parent   Parent @relation(fields: [parentId], references: [id])
+  parentId String?
+  parent   Parent? @relation(fields: [parentId], references: [id])
 
-  country      String
-  addressLine1 String
+  country      String?
+  addressLine1 String?
   addressLine2 String?
   landmark     String?
-  city         String
-  state        String
-  zipCode      String
+  city         String?
+  state        String?
+  zipCode      String?
 
   victimCases Case[]
   otherStudentResolutions CaseResolution[] @relation("ResolutionOtherStudents")
