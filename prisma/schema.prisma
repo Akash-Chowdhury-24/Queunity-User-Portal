@@ -1,0 +1,639 @@
+generator client {
+  provider = "prisma-client-py"
+  interface = "asyncio"
+  recursive_type_depth = 5
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ----------------------------
+// SCHOOLS
+// ----------------------------
+
+enum SchoolType {
+  PRIMARY
+  MIDDLE
+  HIGH
+  K12
+}
+
+enum SchoolCategory {
+  PUBLIC
+  PRIVATE
+  CHARTER
+}
+
+model School {
+  id                     String   @id @default(uuid())
+  initials String? 
+  name                   String   @unique
+  logoUrl                String?
+
+  schoolType             SchoolType?
+  schoolCategory         SchoolCategory?
+
+  numberOfFacultyMembers Int?
+  numberOfStudents       Int?
+
+  country                String?
+  addressLine1           String?
+  addressLine2           String?
+  landmark               String?
+  city                   String?
+  state                  String?
+  zipCode                String?
+
+  principalFirstName     String?
+  principalLastName      String?
+  principalPhone         String?
+  principalEmail         String   @unique
+
+  cases                  Case[]
+  staffUsers             SchoolStaffUser[]
+  roles                  SchoolRole[]
+  departments            SchoolDepartment[]
+  designations           SchoolDesignation[]
+  grades                 Grade[]
+  students               Student[]
+
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+}
+
+// School dashboard users (principal + staff). Credentials live here, not on School.
+model SchoolStaffUser {
+  id            String     @id @default(uuid())
+  email         String     @unique
+  passwordHash  String
+
+  firstName     String
+  lastName      String
+  phoneNumber   String
+  avatarUrl     String
+
+  resetPasswordTokenHash      String?   @unique
+  resetPasswordTokenExpiresAt DateTime?
+
+  school        School     @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  schoolId      String
+
+  role          SchoolRole     @relation(fields: [roleId], references: [id])
+  roleId        String
+
+  department    SchoolDepartment @relation(fields: [departmentId], references: [id])
+  departmentId  String
+
+  designation   SchoolDesignation   @relation(fields: [designationId], references:[id])
+  designationId String
+
+  grades        Grade[]
+
+  counselorResolutions      CaseResolution[] @relation("ResolutionCounselors")
+  representativeResolutions CaseResolution[] @relation("ResolutionRepresentatives")
+
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+}
+
+model SchoolRole {
+  id           String           @id @default(uuid())
+  name         String
+
+  school       School           @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  schoolId     String
+
+  users        SchoolStaffUser[]
+  permissions  Json
+
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  @@unique([schoolId, name])
+}
+
+model SchoolDepartment {
+  id              String  @id @default(uuid())
+  departmentName  String
+
+  school          School  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  schoolId        String
+
+  staffs          SchoolStaffUser[]
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([schoolId, departmentName])
+}
+
+model SchoolDesignation {
+  id               String  @id @default(uuid())
+  designationName  String
+
+  school           School  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  schoolId         String
+
+  staffs           SchoolStaffUser[]
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@unique([schoolId, designationName])
+}
+
+// ----------------------------
+// CHARITIES
+// ----------------------------
+
+enum CharityCategory {
+  YOUTH
+  EDUCATION
+  FOOD_SUPPORT
+  MENTAL_HEALTH
+}
+
+model Charity {
+  id            String   @id @default(uuid())
+  name          String
+  logoUrl       String?
+
+  description   String
+  category      CharityCategory
+
+  country       String
+  addressLine1  String
+  addressLine2  String?
+  landmark      String?
+  city          String
+  state         String
+  zipCode       String
+
+  ownerFirstName     String
+  ownerLastName      String
+  ownerPhone         String
+  ownerEmail         String
+
+  cases          Case[]
+
+  documents     String[] @default([])
+  galleryImages String[] @default([])
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+
+// ----------------------------
+// OFFENSE
+// ----------------------------
+
+
+model Offense {
+  id                  String @id @default(uuid())
+  offenseName         String @unique
+
+  offenseSubCategories  OffenseSubCategory[]
+  cases                 Case[]
+}
+
+model OffenseSubCategory {
+  id                     String @id @default(uuid())
+  offenseSubCategoryName String
+
+  cases                  Case[]
+
+  offenseId              String
+  offense                Offense @relation(fields: [offenseId], references: [id], onDelete: Cascade)
+
+  questionSets           QuestionSet[]
+}
+
+model QuestionSet {
+  id                     String @id @default(uuid())
+  questionSetName        String
+  questions              Json
+
+  offenseSubCategoryId   String
+  offenseSubCategory     OffenseSubCategory @relation(fields: [offenseSubCategoryId], references: [id], onDelete: Cascade)
+}
+
+// ----------------------------
+// CASES
+// ----------------------------
+
+enum LocationType {
+  OUTSIDE_SCHOOL
+  WITHIN_SCHOOL
+}
+
+enum AreaType {
+  CLASSROOM
+  CAFETERIA
+  PLAYGROUND
+  HALLWAY
+  BATHROOM
+  BUS_AREA
+  SPORTS_FIELD
+  COMPUTER_LAB
+  LIBRARY
+  OTHER
+}
+
+enum AnonymityLevel {
+  COMPLETE_ANONYMOUS
+  STUDENT_SUBJECT_ONLY
+  HIDE_FROM_PARENTS
+  DONT_HIDE_IDENTITY
+}
+
+enum PrivacyLevel {
+  LEVEL_1
+  LEVEL_2
+}
+
+enum CharityInvolvement {
+  ALREADY_INFORMED
+  INFORM_NOW
+  MAYBE_LATER
+  NO
+}
+
+enum CharityType {
+  COUNSELLING_SUPPORT
+  CRISIS_INTERVENTION
+  FAMILY_SUPPORT
+  MENTAL_HEALTH
+  ANTI_BULLYING_PARTNER
+  COMMUNITY_SUPPORT
+}
+
+enum PoliceInvolvement {
+  ALREADY_REPORTED
+  MAYBE_LATER
+  NO
+}
+
+enum ResolutionDesired {
+  ADMIN_DISCRETION
+  DISCIPLINE_PER_CONDUCT_POLICY
+  CLASS_WIDE_INTERVENTION_NO_ID
+  DISCIPLINE_AND_RESTORATIVE_CIRCLE
+}
+
+enum CaseStatus {
+  PENDING
+  RESOLVED
+}
+
+enum PersonRelationship {
+  SCHOOLMATE
+  EXTERNAL_STUDENT
+  OTHERS
+}
+
+enum PersonType {
+  PARENT
+  FAMILY_MEMBER
+  STAFF
+  COMMUNITY_MEMBER
+  CONTRACTOR_VISITOR
+  ONLINE_PERSON
+  STRANGER
+  OTHER
+}
+
+enum WitnessCoverage {
+  ENTIRE_INCIDENT
+  PARTIALLY
+  ONLY_HEARD
+  NOT_SURE
+}
+
+enum WitnessReliability {
+  HIGH
+  MEDIUM
+  LOW
+  UNKNOWN
+}
+
+enum RelationshipToVictim {
+  CLASSMATE
+  FRIEND
+  TEAM_MEMBER
+  SIBLING
+  NO_RELATIONSHIP
+  UNKNOWN
+}
+
+enum WasPresent {
+  YES
+  PARTIALLY
+  NO
+  UNKNOWN
+}
+
+model Case {
+  id          String @id @default(uuid())
+  caseName    String
+
+  schoolId    String?
+  school      School? @relation(fields: [schoolId], references: [id])
+  otherSchoolName String?
+
+  offenseId   String
+  offense     Offense @relation(fields: [offenseId], references: [id])
+
+  offenseSubCategoryId String
+  offenseSubCategory   OffenseSubCategory @relation(fields: [offenseSubCategoryId], references: [id])
+
+  incidentDate DateTime @db.Date
+  incidentTime String
+
+  locationType    LocationType
+  areaType        AreaType?
+  areaDescription String?
+  gradeId         String?
+  grade           Grade?  @relation(fields: [gradeId], references: [id], onDelete: SetNull)
+
+  anonymityLevel AnonymityLevel
+  privacyLevel   PrivacyLevel
+
+  charityInvolvement       CharityInvolvement?
+  charityId                String?
+  charity                  Charity? @relation(fields: [charityId], references: [id])
+  charityNameFallback      String?
+  charityTypeRequested     CharityType?
+  charityInvolvementReason String?
+
+  policeInvolvement       PoliceInvolvement?
+  policeReportNumber      String?
+  policeOfficerName       String?
+  policeStationDepartment String?
+  policeReportDate        DateTime?
+  policeReportImageUrl    String?
+
+  resolutionDesired ResolutionDesired?
+
+  draft        Boolean    @default(true)
+  status       CaseStatus?
+  currentStage Int        @default(1)
+  hasEvidence  Boolean    @default(false)
+
+  victimId String?
+  victim   Student? @relation(fields: [victimId], references: [id])
+
+  suspects  Suspect[]
+  witnesses Witness[]
+  evidence  Evidence[]
+  resolution CaseResolution?
+  followUps  CaseFollowUp[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Suspect {
+  id     String @id @default(uuid())
+  caseId String
+  case   Case   @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  isKnown      Boolean
+  relationship PersonRelationship?
+
+  grade           String?
+  studentName     String?
+  studentImageUrl String?
+  studentDetails  String?
+
+  extSchoolName  String?
+  extSchoolCity  String?
+  extSchoolState String?
+  gender         String?
+  howIdentified  String?
+
+  organization            String?
+  personType              PersonType?
+  personName              String?
+  age                     Int?
+  relationshipWithStudent String?
+  contact                 String?
+  howKnowThisPerson       String?
+  wasOnSchoolGrounds      Boolean?
+  whereOnCampusSeen       String?
+
+  physicalDetails  Json?
+  vehicleDetails   Json?
+  behaviorObserved String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Witness {
+  id     String @id @default(uuid())
+  caseId String
+  case   Case   @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  isKnown      Boolean
+  relationship PersonRelationship?
+
+  grade                String?
+  studentName          String?
+  witnessCoverage      WitnessCoverage?
+  witnessReliability   WitnessReliability?
+  witnessStatement     String?
+  relationshipToVictim RelationshipToVictim?
+
+  extSchoolName  String?
+  extSchoolCity  String?
+  extSchoolState String?
+  gender         String?
+  age            Int?
+  howIdentified  String?
+  studentDetails String?
+
+  organization            String?
+  personType              PersonType?
+  personName              String?
+  relationshipWithStudent String?
+  contact                 String?
+  howConnectedToIncident  String?
+  wasPresent              WasPresent?
+
+  physicalDetails  Json?
+  vehicleDetails   Json?
+  behaviorObserved String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Evidence {
+  id          String   @id @default(uuid())
+  caseId      String
+  case        Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  fileUrls    String[] @default([])
+  description String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ----------------------------
+// GRADES & STUDENTS
+// ----------------------------
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+model Grade {
+  id        String @id @default(uuid())
+  gradeName String
+
+  school   School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  schoolId String
+  classTeacher   SchoolStaffUser @relation(fields: [classTeacherId], references: [id])
+  classTeacherId String
+
+  students              Student[]
+  cases                 Case[]
+  otherGradeResolutions CaseResolution[] @relation("ResolutionOtherGrades")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([schoolId, gradeName])
+}
+
+model Student {
+  id          String   @id @default(uuid())
+  firstName   String
+  lastName    String
+  dateOfBirth DateTime @db.Date
+  email       String   @unique
+  gender      Gender
+  photoUrl    String?
+
+
+  admissionYear Int
+  publicId      String @unique
+
+  grade   Grade  @relation(fields: [gradeId], references: [id])
+  gradeId String
+
+  school   School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  schoolId String
+
+  parentId String
+  parent   Parent @relation(fields: [parentId], references: [id])
+
+  country      String
+  addressLine1 String
+  addressLine2 String?
+  landmark     String?
+  city         String
+  state        String
+  zipCode      String
+
+  victimCases Case[]
+  otherStudentResolutions CaseResolution[] @relation("ResolutionOtherStudents")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Parent {
+  id          String  @id @default(uuid())
+  firstName   String
+  lastName    String
+  email       String  @unique
+  phoneNumber String?
+
+  passwordHash                String
+  resetPasswordTokenHash      String?   @unique
+  resetPasswordTokenExpiresAt DateTime?
+
+  students Student[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ----------------------------
+// Case Resolutions
+// ----------------------------
+
+enum ResolutionType {
+  RESTORATIVE_CIRCLE
+  RESTORATIVE_CONFERENCE
+}
+
+enum OtherStudentBy {
+  GRADE
+  INDIVIDUAL
+}
+
+model CaseResolution {
+  id     String @id @default(uuid())
+
+  caseId String @unique
+  case   Case   @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  resolutionType ResolutionType?
+
+  parents String[] @default([])
+
+  counselors            SchoolStaffUser[] @relation("ResolutionCounselors")
+  schoolRepresentatives SchoolStaffUser[] @relation("ResolutionRepresentatives")
+
+  addOtherStudent Boolean         @default(false)
+  otherStudentBy  OtherStudentBy?
+  otherStudents   Student[]       @relation("ResolutionOtherStudents")
+  otherGrades     Grade[]         @relation("ResolutionOtherGrades")
+
+  dateTimeLocations Json @default("[]")
+
+  disciplinaryActionShouldBeThere Boolean  @default(false)
+  disciplinaryActions             String[] @default([])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ----------------------------
+// Case Follow-ups
+// ----------------------------
+
+enum ReminderFor {
+  VICTIM
+  ACCUSED
+}
+
+enum FollowUpStatus {
+  DONE
+  NOT_DONE
+}
+
+model CaseFollowUp {
+  id String @id @default(uuid())
+
+  caseId String
+  case   Case @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  reminderDate DateTime @db.Date
+  reminderTime String
+
+  reminderFor ReminderFor
+  notes       String
+
+  status      FollowUpStatus @default(NOT_DONE)
+  emailSentAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

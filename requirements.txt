@@ -1,0 +1,31 @@
+# Pin versions before deploying to production.
+
+fastapi
+uvicorn[standard]
+gunicorn
+
+# Database
+prisma
+psycopg[binary]
+
+# Authentication
+python-jose[cryptography]
+passlib[bcrypt]
+# passlib 1.7.4 cannot drive bcrypt>=4.1; hashing uses the bcrypt backend directly
+
+# Settings / validation
+pydantic
+pydantic-settings
+email-validator
+python-dotenv
+python-multipart
+
+# Storage
+boto3
+
+# Rate limiting
+slowapi
+
+# Tests
+pytest
+httpx
