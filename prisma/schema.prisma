@@ -28,7 +28,6 @@ enum SchoolCategory {
 
 model School {
   id                     String   @id @default(uuid())
-  initials String? 
   name                   String   @unique
   logoUrl                String?
 
