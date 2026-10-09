@@ -34,6 +34,8 @@ model School {
   schoolType             SchoolType?
   schoolCategory         SchoolCategory?
 
+  publicId               String @unique
+
   numberOfFacultyMembers Int?
   numberOfStudents       Int?
 
@@ -334,6 +336,19 @@ enum WasPresent {
   UNKNOWN
 }
 
+enum WhenItHappened{
+  TODAY
+  YESTERDAY
+  FEW_DAYS_AGO
+}
+
+enum WhereItHappened{
+  CLASSROOM
+  BATHROOM
+  PLAYGROUND
+  OTHERS
+}
+
 model Case {
   id          String @id @default(uuid())
   caseName    String
@@ -342,23 +357,23 @@ model Case {
   school      School? @relation(fields: [schoolId], references: [id])
   otherSchoolName String?
 
-  offenseId   String
-  offense     Offense @relation(fields: [offenseId], references: [id])
+  offenseId   String?
+  offense     Offense? @relation(fields: [offenseId], references: [id], onDelete: Restrict)
 
-  offenseSubCategoryId String
-  offenseSubCategory   OffenseSubCategory @relation(fields: [offenseSubCategoryId], references: [id])
+  offenseSubCategoryId String?
+  offenseSubCategory   OffenseSubCategory? @relation(fields: [offenseSubCategoryId], references: [id], onDelete: Restrict)
 
-  incidentDate DateTime @db.Date
-  incidentTime String
+  incidentDate DateTime? @db.Date
+  incidentTime String?
 
-  locationType    LocationType
+  locationType    LocationType?
   areaType        AreaType?
   areaDescription String?
   gradeId         String?
   grade           Grade?  @relation(fields: [gradeId], references: [id], onDelete: SetNull)
 
-  anonymityLevel AnonymityLevel
-  privacyLevel   PrivacyLevel
+  anonymityLevel AnonymityLevel?
+  privacyLevel   PrivacyLevel?
 
   charityInvolvement       CharityInvolvement?
   charityId                String?
@@ -389,6 +404,10 @@ model Case {
   evidence  Evidence[]
   resolution CaseResolution?
   followUps  CaseFollowUp[]
+
+  caseDescription String?
+  whenItHappened WhenItHappened?
+  whereItHappened WhereItHappened?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -556,6 +575,7 @@ model Parent {
   firstName   String
   lastName    String
   email       String  @unique
+  photoUrl    String?
   phoneNumber String?
 
   passwordHash                String
