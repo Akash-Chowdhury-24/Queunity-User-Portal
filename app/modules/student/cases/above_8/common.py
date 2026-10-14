@@ -1,5 +1,5 @@
 import json
-from datetime import date, datetime, time, timezone
+from datetime import date, datetime, time, timezone, timedelta
 from enum import Enum
 from typing import Annotated, Any
 
@@ -49,15 +49,19 @@ async def get_above8_student(current_user: TokenPayload):
     if current_user.role != STUDENT_ROLE:
         raise APIException(status_code=403, message="Only students can access cases")
 
-    # The token can outlive a change to the student's record, so re-check above8Years from the DB.
     student = await prisma.student.find_unique(where={"id": current_user.id})
     if not student:
         raise APIException(status_code=401, message="Student not found")
-    if not student.above8Years:
-        raise APIException(
-            status_code=403,
-            message="These cases are only available to students above 8 years old",
-        )
+    
+    today = date.today()
+    dob = student.dateOfBirth.date()
+
+    isStudentAbove8Years = (
+        dob < date(today.year - 8, today.month, today.day)
+    )
+    
+    if not isStudentAbove8Years:
+        raise APIException(status_code=403, message="These cases are only available to students above 8 years old")
     return student
 
 
