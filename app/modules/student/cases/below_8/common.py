@@ -1,3 +1,4 @@
+from datetime import date, datetime, timedelta
 from app.common.general_schema import TokenPayload
 from app.core.database import prisma
 from app.core.exceptions import APIException
@@ -9,18 +10,21 @@ async def get_below8_student(current_user: TokenPayload):
     if current_user.role != STUDENT_ROLE:
         raise APIException(status_code=403, message="Only students can access cases")
 
-    # The token can outlive a change to the student's record, so re-check above8Years from the DB.
     student = await prisma.student.find_unique(
         where={"id": current_user.id},
         include={"parent": True, "school": True},
     )
     if not student:
         raise APIException(status_code=401, message="Student not found")
-    if student.above8Years:
-        raise APIException(
-            status_code=403,
-            message="These cases are only available to students 8 years old or below",
-        )
+
+    today = date.today()
+    dob = student.dateOfBirth.date()
+    
+    isStudentAbove8Years = (
+        dob < date(today.year - 8, today.month, today.day)
+    )
+    if isStudentAbove8Years:
+        raise APIException(status_code=403, message="These cases are only available to students 8 years old or below")
     return student
 
 

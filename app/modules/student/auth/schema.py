@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr, Field
-
+from datetime import date
 
 class StudentLoginModel(BaseModel):
     email: EmailStr
@@ -11,7 +11,7 @@ class StudentRegisterModel(BaseModel):
     lastName: str
     email: EmailStr
     password: str
-    above8Years: bool
+    dateOfBirth: date
 
 
 class StudentForgotPasswordModel(BaseModel):

@@ -56,7 +56,6 @@ class CaseVictimOut(BaseModel):
     dateOfBirth: date | None = None
     gender: Gender | None = None
     photoUrl: str | None = None
-    above8Years: bool
     gradeId: str | None = None
     grade: GradeSimpleOut | None = None
     schoolId: str | None = None
