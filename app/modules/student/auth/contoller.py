@@ -41,7 +41,6 @@ def _student_token(student) -> str:
             "id": student.id,
             "role": "student",
             "email": student.email,
-            "above8Years": student.above8Years,
         }
     )
 
@@ -68,6 +67,7 @@ async def student_register_controller(payload: StudentRegisterModel):
     first_name = payload.firstName.strip()
     last_name = payload.lastName.strip()
     email = _normalize_email(payload.email)
+    date_of_birth = payload.dateOfBirth
 
     if await prisma.student.find_first(
         where={"email": {"equals": email, "mode": "insensitive"}}
@@ -79,8 +79,8 @@ async def student_register_controller(payload: StudentRegisterModel):
             "firstName": first_name,
             "lastName": last_name,
             "email": email,
+            "dateOfBirth": date_of_birth,
             "passwordHash": hash_password(payload.password),
-            "above8Years": payload.above8Years,
             "publicId": generate_student_public_id(first_name, last_name, email),
         }
     )

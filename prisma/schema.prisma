@@ -541,8 +541,6 @@ model Student {
   resetPasswordTokenHash      String?   @unique
   resetPasswordTokenExpiresAt DateTime?
 
-  above8Years   Boolean @default(false)
-
   admissionYear Int?
   publicId      String @unique
 
