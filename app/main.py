@@ -33,7 +33,7 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title="Queunity User Portal API",
         version="1.0.0",
-        openapi_version="3.0.2",##To be removed later on when this part is done
+        # openapi_version="3.0.2",
         lifespan=lifespan,
     )
 
