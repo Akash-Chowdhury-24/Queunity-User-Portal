@@ -14,6 +14,11 @@ from app.modules.student.cases.above_8.case.controller import (
     delete_case_controller,
     get_all_cases_controller,
     get_case_by_id_controller,
+    list_charities_controller,
+    list_grades_controller,
+    list_offense_sub_categories_controller,
+    list_offenses_controller,
+    list_schools_controller,
     update_case_stage1_controller,
     update_case_stage5_controller,
     update_case_stage6_controller,
@@ -32,7 +37,55 @@ from app.modules.student.cases.above_8.schema.enums import (
 )
 
 studentCasesRouter = APIRouter()
+studentCaseLookupsRouter = APIRouter()
 CurrentUser = Annotated[TokenPayload, Depends(get_current_user)]
+
+
+@studentCaseLookupsRouter.get("/schools", status_code=HTTP_200_OK)
+async def list_schools(
+    current_user: CurrentUser,
+    query: Annotated[ListQuery, Depends(list_query)],
+):
+    return await list_schools_controller(current_user, query)
+
+
+@studentCaseLookupsRouter.get("/grades", status_code=HTTP_200_OK)
+async def list_grades(
+    current_user: CurrentUser,
+    query: Annotated[ListQuery, Depends(list_query)],
+    schoolId: Annotated[str, Query(description="School UUID to list grades for")],
+):
+    return await list_grades_controller(current_user, query, school_id=schoolId)
+
+
+@studentCaseLookupsRouter.get("/offenses", status_code=HTTP_200_OK)
+async def list_offenses(
+    current_user: CurrentUser,
+    query: Annotated[ListQuery, Depends(list_query)],
+):
+    return await list_offenses_controller(current_user, query)
+
+
+@studentCaseLookupsRouter.get("/offense-sub-categories", status_code=HTTP_200_OK)
+async def list_offense_sub_categories(
+    current_user: CurrentUser,
+    query: Annotated[ListQuery, Depends(list_query)],
+    offenseId: Annotated[
+        str | None,
+        Query(description="Optional offense UUID to filter sub categories"),
+    ] = None,
+):
+    return await list_offense_sub_categories_controller(
+        current_user, query, offense_id=offenseId
+    )
+
+
+@studentCaseLookupsRouter.get("/charities", status_code=HTTP_200_OK)
+async def list_charities(
+    current_user: CurrentUser,
+    query: Annotated[ListQuery, Depends(list_query)],
+):
+    return await list_charities_controller(current_user, query)
 
 
 @studentCasesRouter.post("", status_code=HTTP_201_CREATED)

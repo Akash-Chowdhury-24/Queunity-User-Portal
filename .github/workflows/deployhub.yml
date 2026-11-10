@@ -30,7 +30,15 @@ jobs:
           node-version: '20'
       - name: Install project dependencies
         run: pip install -r requirements.txt
+      - name: Configure GitHub Packages for DeployHub
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@akash-chowdhury-24'
       - name: Install DeployHub CLI
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.DEPLOYHUB_NPM_TOKEN }}
         run: npm install @akash-chowdhury-24/deployhub@latest --no-save
       - name: Build (and auto-deploy push-triggered envs)
         run: node ./node_modules/@akash-chowdhury-24/deployhub/src/cli/index.js build

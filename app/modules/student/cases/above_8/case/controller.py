@@ -282,3 +282,209 @@ async def delete_case_controller(current_user: TokenPayload, case_id: str):
 
     await delete_case_files(deleted)
     return success_response(message="Case deleted successfully", data=public_case(deleted))
+
+
+# ----------------------------
+# Case form pick-lists
+# ----------------------------
+
+
+def _public_school(school) -> dict:
+    return {
+        "id": school.id,
+        "publicId": school.publicId,
+        "name": school.name,
+        "logoUrl": school.logoUrl,
+        "schoolType": school.schoolType,
+        "schoolCategory": school.schoolCategory,
+        "city": school.city,
+        "state": school.state,
+        "country": school.country,
+    }
+
+
+def _public_grade(grade) -> dict:
+    return {
+        "id": grade.id,
+        "gradeName": grade.gradeName,
+        "schoolId": grade.schoolId,
+    }
+
+
+def _public_offense(offense) -> dict:
+    return {
+        "id": offense.id,
+        "offenseName": offense.offenseName,
+        "subCategories": [
+            {
+                "id": sub.id,
+                "offenseSubCategoryName": sub.offenseSubCategoryName,
+                "offenseId": sub.offenseId,
+            }
+            for sub in (offense.offenseSubCategories or [])
+        ],
+    }
+
+
+def _public_offense_sub_category(sub) -> dict:
+    return {
+        "id": sub.id,
+        "offenseSubCategoryName": sub.offenseSubCategoryName,
+        "offenseId": sub.offenseId,
+    }
+
+
+def _public_charity(charity) -> dict:
+    return {
+        "id": charity.id,
+        "name": charity.name,
+        "logoUrl": charity.logoUrl,
+        "description": charity.description,
+        "category": charity.category,
+        "city": charity.city,
+        "state": charity.state,
+        "country": charity.country,
+    }
+
+
+async def list_schools_controller(current_user: TokenPayload, query: ListQuery):
+    await get_above8_student(current_user)
+    where = text_search(query.search, "name", "city", "state", "country", "publicId")
+    schools, total = await asyncio.gather(
+        prisma.school.find_many(
+            where=where,
+            order={"name": "asc"},
+            **prisma_paging(query.skip, query.limit),
+        ),
+        prisma.school.count(where=where),
+    )
+    return success_response(
+        message="Schools fetched successfully",
+        data=paginated_data(
+            [_public_school(school) for school in schools],
+            total,
+            query.skip,
+            query.limit,
+        ),
+    )
+
+
+async def list_grades_controller(
+    current_user: TokenPayload,
+    query: ListQuery,
+    school_id: str,
+):
+    await get_above8_student(current_user)
+
+    school = await prisma.school.find_unique(where={"id": school_id})
+    if not school:
+        raise APIException(status_code=404, message="School not found")
+
+    where = merge_filters(
+        {"schoolId": school_id},
+        text_search(query.search, "gradeName"),
+    )
+    grades, total = await asyncio.gather(
+        prisma.grade.find_many(
+            where=where,
+            order={"gradeName": "asc"},
+            **prisma_paging(query.skip, query.limit),
+        ),
+        prisma.grade.count(where=where),
+    )
+    return success_response(
+        message="Grades fetched successfully",
+        data=paginated_data(
+            [_public_grade(grade) for grade in grades],
+            total,
+            query.skip,
+            query.limit,
+        ),
+    )
+
+
+async def list_offenses_controller(current_user: TokenPayload, query: ListQuery):
+    await get_above8_student(current_user)
+    where = text_search(query.search, "offenseName")
+    offenses, total = await asyncio.gather(
+        prisma.offense.find_many(
+            where=where,
+            include={"offenseSubCategories": {"order_by": {"offenseSubCategoryName": "asc"}}},
+            order={"offenseName": "asc"},
+            **prisma_paging(query.skip, query.limit),
+        ),
+        prisma.offense.count(where=where),
+    )
+    return success_response(
+        message="Offenses fetched successfully",
+        data=paginated_data(
+            [_public_offense(offense) for offense in offenses],
+            total,
+            query.skip,
+            query.limit,
+        ),
+    )
+
+
+async def list_offense_sub_categories_controller(
+    current_user: TokenPayload,
+    query: ListQuery,
+    offense_id: str | None = None,
+):
+    await get_above8_student(current_user)
+
+    if offense_id:
+        offense = await prisma.offense.find_unique(where={"id": offense_id})
+        if not offense:
+            raise APIException(status_code=404, message="Offense not found")
+
+    where = merge_filters(
+        {"offenseId": offense_id} if offense_id else None,
+        text_search(query.search, "offenseSubCategoryName"),
+    )
+    sub_categories, total = await asyncio.gather(
+        prisma.offensesubcategory.find_many(
+            where=where,
+            order={"offenseSubCategoryName": "asc"},
+            **prisma_paging(query.skip, query.limit),
+        ),
+        prisma.offensesubcategory.count(where=where),
+    )
+    return success_response(
+        message="Offense sub categories fetched successfully",
+        data=paginated_data(
+            [_public_offense_sub_category(sub) for sub in sub_categories],
+            total,
+            query.skip,
+            query.limit,
+        ),
+    )
+
+
+async def list_charities_controller(current_user: TokenPayload, query: ListQuery):
+    await get_above8_student(current_user)
+    where = text_search(
+        query.search,
+        "name",
+        "description",
+        "city",
+        "state",
+        "country",
+    )
+    charities, total = await asyncio.gather(
+        prisma.charity.find_many(
+            where=where,
+            order={"name": "asc"},
+            **prisma_paging(query.skip, query.limit),
+        ),
+        prisma.charity.count(where=where),
+    )
+    return success_response(
+        message="Charities fetched successfully",
+        data=paginated_data(
+            [_public_charity(charity) for charity in charities],
+            total,
+            query.skip,
+            query.limit,
+        ),
+    )
