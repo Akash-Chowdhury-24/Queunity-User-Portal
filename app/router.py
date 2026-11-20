@@ -1,3 +1,4 @@
+from app.modules.location.route import locationRouter
 from app.modules.parent.auth.routes import parentAuthRouter
 from app.modules.parent.cases.case.route import parentCaseLookupsRouter, parentCasesRouter
 from app.modules.parent.cases.evidence.route import parentEvidenceRouter
@@ -17,6 +18,7 @@ from fastapi import APIRouter
 
 mainRouter = APIRouter()
 
+mainRouter.include_router(locationRouter)
 mainRouter.include_router( parentAuthRouter, prefix="/parent/auth" , tags=["Parent Auth"])
 mainRouter.include_router( studentAuthRouter, prefix="/student/auth" , tags=["Student Auth"])
 mainRouter.include_router( parentCaseLookupsRouter, prefix="/parent" , tags=["Parent Case Lookups"])

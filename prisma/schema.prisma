@@ -39,15 +39,19 @@ model School {
   numberOfFacultyMembers Int?
   numberOfStudents       Int?
 
-  country                String?
   addressLine1           String?
   addressLine2           String?
   landmark               String?
-  city                   String?
-  state                  String?
   zipCode                String?
   email                  String?
   phone                  String?
+
+  countryId String?
+  country   Country? @relation(fields: [countryId], references: [id], onDelete: SetNull)
+  stateId   String?
+  state     State?   @relation(fields: [stateId], references: [id], onDelete: SetNull)
+  cityId    String?
+  city      City?    @relation(fields: [cityId], references: [id], onDelete: SetNull)
 
   principalFirstName     String?
   principalLastName      String?
@@ -64,6 +68,10 @@ model School {
 
   createdAt              DateTime @default(now())
   updatedAt              DateTime @updatedAt
+
+  @@index([countryId])
+  @@index([stateId])
+  @@index([cityId])
 }
 
 // School dashboard users (principal + staff). Credentials live here, not on School.
@@ -166,15 +174,19 @@ model Charity {
   description   String
   category      CharityCategory
 
-  country       String?
   addressLine1  String?
   addressLine2  String?
   landmark      String?
-  city          String?
-  state         String?
   zipCode       String?
   email         String?
   phone         String?
+
+  countryId String?
+  country   Country? @relation(fields: [countryId], references: [id], onDelete: SetNull)
+  stateId   String?
+  state     State?   @relation(fields: [stateId], references: [id], onDelete: SetNull)
+  cityId    String?
+  city      City?    @relation(fields: [cityId], references: [id], onDelete: SetNull)
 
   ownerFirstName     String
   ownerLastName      String
@@ -188,6 +200,10 @@ model Charity {
 
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+
+  @@index([countryId])
+  @@index([stateId])
+  @@index([cityId])
 }
 
 
@@ -557,19 +573,27 @@ model Student {
   parentId String?
   parent   Parent? @relation(fields: [parentId], references: [id])
 
-  country      String?
   addressLine1 String?
   addressLine2 String?
   landmark     String?
-  city         String?
-  state        String?
   zipCode      String?
+
+  countryId String?
+  country   Country? @relation(fields: [countryId], references: [id], onDelete: SetNull)
+  stateId   String?
+  state     State?   @relation(fields: [stateId], references: [id], onDelete: SetNull)
+  cityId    String?
+  city      City?    @relation(fields: [cityId], references: [id], onDelete: SetNull)
 
   victimCases Case[]
   otherStudentResolutions CaseResolution[] @relation("ResolutionOtherStudents")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([countryId])
+  @@index([stateId])
+  @@index([cityId])
 }
 
 model Parent {
@@ -662,4 +686,50 @@ model CaseFollowUp {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+
+
+
+model Country {
+  id        String @id @default(uuid())
+  name      String
+  iso2      String @unique
+  iso3      String
+  phoneCode String
+
+  states    State[]
+  schools   School[]
+  charities Charity[]
+  students  Student[]
+}
+
+model State {
+  id        String @id @default(uuid())
+  name      String
+  stateCode String
+
+  countryId String
+  country   Country @relation(fields: [countryId], references: [id], onDelete: Cascade)
+
+  cities    City[]
+  schools   School[]
+  charities Charity[]
+  students  Student[]
+
+  @@unique([countryId, stateCode])
+}
+
+model City {
+  id   String @id @default(uuid())
+  name String
+
+  stateId String
+  state   State @relation(fields: [stateId], references: [id], onDelete: Cascade)
+
+  schools   School[]
+  charities Charity[]
+  students  Student[]
+
+  @@index([stateId, name])
 }
