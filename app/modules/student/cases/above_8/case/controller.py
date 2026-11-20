@@ -3,6 +3,7 @@ import asyncio
 from fastapi import UploadFile
 
 from app.common.general_schema import TokenPayload
+from app.common.location import LOCATION_INCLUDE, location_search_extra, serialize_location_relation
 from app.common.pagination import (
     ListQuery,
     contains,
@@ -297,9 +298,12 @@ def _public_school(school) -> dict:
         "logoUrl": school.logoUrl,
         "schoolType": school.schoolType,
         "schoolCategory": school.schoolCategory,
-        "city": school.city,
-        "state": school.state,
-        "country": school.country,
+        "countryId": school.countryId,
+        "stateId": school.stateId,
+        "cityId": school.cityId,
+        "country": serialize_location_relation(school.country),
+        "state": serialize_location_relation(school.state),
+        "city": serialize_location_relation(school.city),
     }
 
 
@@ -341,18 +345,27 @@ def _public_charity(charity) -> dict:
         "logoUrl": charity.logoUrl,
         "description": charity.description,
         "category": charity.category,
-        "city": charity.city,
-        "state": charity.state,
-        "country": charity.country,
+        "countryId": charity.countryId,
+        "stateId": charity.stateId,
+        "cityId": charity.cityId,
+        "country": serialize_location_relation(charity.country),
+        "state": serialize_location_relation(charity.state),
+        "city": serialize_location_relation(charity.city),
     }
 
 
 async def list_schools_controller(current_user: TokenPayload, query: ListQuery):
     await get_above8_student(current_user)
-    where = text_search(query.search, "name", "city", "state", "country", "publicId")
+    where = text_search(
+        query.search,
+        "name",
+        "publicId",
+        extra=location_search_extra(query.search),
+    )
     schools, total = await asyncio.gather(
         prisma.school.find_many(
             where=where,
+            include=LOCATION_INCLUDE,
             order={"name": "asc"},
             **prisma_paging(query.skip, query.limit),
         ),
@@ -467,13 +480,12 @@ async def list_charities_controller(current_user: TokenPayload, query: ListQuery
         query.search,
         "name",
         "description",
-        "city",
-        "state",
-        "country",
+        extra=location_search_extra(query.search),
     )
     charities, total = await asyncio.gather(
         prisma.charity.find_many(
             where=where,
+            include=LOCATION_INCLUDE,
             order={"name": "asc"},
             **prisma_paging(query.skip, query.limit),
         ),

@@ -4,6 +4,7 @@ from fastapi import BackgroundTasks, UploadFile
 from prisma.errors import UniqueViolationError
 
 from app.common.general_schema import TokenPayload
+from app.common.location import LOCATION_INCLUDE
 from app.common.response import success_response
 from app.common.s3 import delete_image, upload_image
 from app.common.student_public_id import generate_student_public_id
@@ -23,7 +24,11 @@ from app.modules.parent.child.utils import (
 
 PARENT_ROLE = "parent"
 STUDENT_PHOTO_FOLDER = "students"
-CHILD_INCLUDE = {"school": True, "grade": True}
+CHILD_INCLUDE = {
+    "school": {"include": LOCATION_INCLUDE},
+    "grade": True,
+    **LOCATION_INCLUDE,
+}
 PUBLIC_ID_ATTEMPTS = 5
 
 
@@ -38,9 +43,12 @@ async def _get_parent(current_user: TokenPayload):
 
 
 async def _get_school_by_public_id(public_id: str, *, include_grades: bool = False):
+    include = dict(LOCATION_INCLUDE)
+    if include_grades:
+        include["grades"] = {"order_by": {"gradeName": "asc"}}
     school = await prisma.school.find_unique(
         where={"publicId": public_id.strip().upper()},
-        include={"grades": {"order_by": {"gradeName": "asc"}}} if include_grades else None,
+        include=include,
     )
     if not school:
         raise APIException(status_code=404, message="No school found with this public ID")

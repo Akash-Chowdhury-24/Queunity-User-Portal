@@ -6,6 +6,7 @@ from datetime import date, datetime
 from typing import Any
 from zoneinfo import ZoneInfo
 
+from app.common.location import serialize_location_relation
 from app.core.config import settings
 from app.core.email import send_email
 
@@ -24,14 +25,16 @@ PUBLIC_SCHOOL_FIELDS = {
     "logoUrl",
     "schoolType",
     "schoolCategory",
-    "country",
+    "countryId",
+    "stateId",
+    "cityId",
     "addressLine1",
     "addressLine2",
     "landmark",
-    "city",
-    "state",
     "zipCode",
 }
+
+LOCATION_RELATION_KEYS = {"country", "state", "city"}
 
 PASSWORD_SYMBOLS = "!@#$%^&*"
 
@@ -57,6 +60,8 @@ def public_school(school: Any, *, include_grades: bool = False) -> dict | None:
     if school is None:
         return None
     data = school.model_dump(include=PUBLIC_SCHOOL_FIELDS)
+    for key in LOCATION_RELATION_KEYS:
+        data[key] = serialize_location_relation(getattr(school, key, None))
     if include_grades:
         data["grades"] = [
             {"id": grade.id, "gradeName": grade.gradeName}
@@ -67,8 +72,11 @@ def public_school(school: Any, *, include_grades: bool = False) -> dict | None:
 
 def public_child(student: Any) -> dict:
     data = student.model_dump(
-        exclude=SENSITIVE_STUDENT_FIELDS | {"school", "grade", "parent"}
+        exclude=SENSITIVE_STUDENT_FIELDS
+        | {"school", "grade", "parent", *LOCATION_RELATION_KEYS}
     )
+    for key in LOCATION_RELATION_KEYS:
+        data[key] = serialize_location_relation(getattr(student, key, None))
     data["school"] = public_school(student.school)
     data["grade"] = (
         {"id": student.grade.id, "gradeName": student.grade.gradeName}

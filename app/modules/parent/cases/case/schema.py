@@ -29,6 +29,7 @@ from app.modules.parent.cases.schema.validate import (
     require_fields,
 )
 from app.modules.parent.cases.suspect.schema import SuspectOut
+from app.modules.location.schema import CityResponse, CountryResponse, StateResponse
 from app.modules.parent.cases.witness.schema import WitnessOut
 
 INCIDENT_TIME_PATTERN = r"^([01]\d|2[0-3]):[0-5]\d$"
@@ -60,12 +61,15 @@ class CaseVictimOut(BaseModel):
     grade: GradeSimpleOut | None = None
     schoolId: str | None = None
     parentId: str | None = None
-    country: str | None = None
+    countryId: str | None = None
+    stateId: str | None = None
+    cityId: str | None = None
+    country: CountryResponse | None = None
+    state: StateResponse | None = None
+    city: CityResponse | None = None
     addressLine1: str | None = None
     addressLine2: str | None = None
     landmark: str | None = None
-    city: str | None = None
-    state: str | None = None
     zipCode: str | None = None
     createdAt: datetime
     updatedAt: datetime

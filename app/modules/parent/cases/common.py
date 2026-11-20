@@ -7,6 +7,7 @@ from fastapi import UploadFile
 from pydantic import BaseModel, BeforeValidator, ValidationError, WithJsonSchema
 
 from app.common.general_schema import TokenPayload
+from app.common.location import LOCATION_INCLUDE
 from app.common.s3 import delete_images, upload_image, upload_multiple_images
 from app.core.database import prisma
 from app.core.exceptions import APIException
@@ -22,7 +23,7 @@ SENSITIVE_STUDENT_FIELDS = {
 }
 
 CASE_VICTIM_INCLUDE = {
-    "victim": {"include": {"grade": True}},
+    "victim": {"include": {"grade": True, **LOCATION_INCLUDE}},
 }
 
 CASE_INCLUDE = {
