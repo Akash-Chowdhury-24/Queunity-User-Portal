@@ -4,8 +4,10 @@ from fastapi import UploadFile
 from pydantic import ValidationError
 
 from app.common.general_schema import TokenPayload
+from app.common.location import LOCATION_INCLUDE, validate_location_ids
 from app.common.pagination import (
     ListQuery,
+    contains,
     merge_filters,
     paginated_data,
     prisma_paging,
@@ -29,7 +31,10 @@ from app.modules.student.cases.above_8.common import (
     person_write_data,
     reshape_validation_errors,
 )
+from app.modules.student.cases.above_8.schema.enums import PersonRelationship
 from app.modules.student.cases.above_8.witness.schema import WitnessCreate, WitnessUpdate
+
+WITNESS_INCLUDE = {**LOCATION_INCLUDE}
 
 
 def _validate_create(raw: dict, case_id: str) -> WitnessCreate:
@@ -55,10 +60,31 @@ def _validate_update(raw: dict) -> WitnessUpdate:
 
 
 async def _get_witness_for_case(case_id: str, witness_id: str):
-    witness = await prisma.witness.find_unique(where={"id": witness_id})
+    witness = await prisma.witness.find_unique(
+        where={"id": witness_id},
+        include=WITNESS_INCLUDE,
+    )
     if not witness or witness.caseId != case_id:
         raise APIException(status_code=404, message="Witness not found")
     return witness
+
+
+async def _witness_write_data(payload, case_id: str, **kwargs) -> dict:
+    data = person_write_data(payload, case_id, **kwargs)
+    if payload.relationship == PersonRelationship.EXTERNAL_STUDENT:
+        validated = await validate_location_ids(
+            country_id=payload.countryId,
+            state_id=payload.stateId,
+            city_id=payload.cityId,
+        )
+        data.update(validated)
+        data["extSchoolCity"] = None
+        data["extSchoolState"] = None
+    else:
+        data["countryId"] = None
+        data["stateId"] = None
+        data["cityId"] = None
+    return data
 
 
 async def create_witness_controller(
@@ -84,13 +110,14 @@ async def create_witness_controller(
     try:
         payload = _validate_create(raw, case_id)
         witness = await prisma.witness.create(
-            data=person_write_data(
+            data=await _witness_write_data(
                 payload,
                 case_id,
                 creating=True,
                 physical_urls=physical_urls,
                 vehicle_urls=vehicle_urls,
-            )
+            ),
+            include=WITNESS_INCLUDE,
         )
     except Exception:
         await delete_images(uploaded)
@@ -112,6 +139,7 @@ async def get_all_witnesses_controller(
 ):
     student = await get_above8_student(current_user)
     await get_case_or_404(case_id, student.id)
+    term = (query.search or "").strip()
     where = merge_filters(
         {"caseId": case_id},
         text_search(
@@ -121,8 +149,6 @@ async def get_all_witnesses_controller(
             "organization",
             "contact",
             "extSchoolName",
-            "extSchoolCity",
-            "extSchoolState",
             "witnessStatement",
             "studentDetails",
             "howIdentified",
@@ -130,11 +156,21 @@ async def get_all_witnesses_controller(
             "behaviorObserved",
             "grade",
             "gender",
+            extra=(
+                [
+                    {"country": {"is": {"name": contains(term)}}},
+                    {"state": {"is": {"name": contains(term)}}},
+                    {"city": {"is": {"name": contains(term)}}},
+                ]
+                if term
+                else None
+            ),
         ),
     )
     witnesses, total = await asyncio.gather(
         prisma.witness.find_many(
             where=where,
+            include=WITNESS_INCLUDE,
             order={"createdAt": "asc"},
             **prisma_paging(query.skip, query.limit),
         ),
@@ -184,7 +220,7 @@ async def update_witness_controller(
         keep_existing = not payload.isKnown
         updated = await prisma.witness.update(
             where={"id": witness_id},
-            data=person_write_data(
+            data=await _witness_write_data(
                 payload,
                 case_id,
                 physical_urls=combined_detail_urls(
@@ -202,6 +238,7 @@ async def update_witness_controller(
                     field_name="existingVehicleFileUrls",
                 ),
             ),
+            include=WITNESS_INCLUDE,
         )
     except Exception:
         await delete_images(uploaded)

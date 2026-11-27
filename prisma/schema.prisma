@@ -498,6 +498,12 @@ model Witness {
   extSchoolName  String?
   extSchoolCity  String?
   extSchoolState String?
+  countryId      String?
+  country        Country? @relation(fields: [countryId], references: [id], onDelete: SetNull)
+  stateId        String?
+  state          State?   @relation(fields: [stateId], references: [id], onDelete: SetNull)
+  cityId         String?
+  city           City?    @relation(fields: [cityId], references: [id], onDelete: SetNull)
   gender         String?
   age            Int?
   howIdentified  String?
@@ -517,6 +523,10 @@ model Witness {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([countryId])
+  @@index([stateId])
+  @@index([cityId])
 }
 
 model Evidence {
@@ -713,6 +723,7 @@ model Country {
   charities Charity[]
   students  Student[]
   suspects  Suspect[]
+  witnesses Witness[]
 }
 
 model State {
@@ -728,6 +739,7 @@ model State {
   charities Charity[]
   students  Student[]
   suspects  Suspect[]
+  witnesses Witness[]
 
   @@unique([countryId, stateCode])
 }
@@ -743,6 +755,7 @@ model City {
   charities Charity[]
   students  Student[]
   suspects  Suspect[]
+  witnesses Witness[]
 
   @@index([stateId, name])
 }

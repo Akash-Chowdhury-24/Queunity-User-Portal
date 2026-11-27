@@ -21,6 +21,7 @@ from app.modules.parent.cases.schema.validate import (
     reject_fields,
     require_fields,
 )
+from app.modules.location.schema import CityResponse, CountryResponse, StateResponse
 
 WITNESS_SCHOOLMATE_FIELDS = (
     "grade",
@@ -32,8 +33,9 @@ WITNESS_SCHOOLMATE_FIELDS = (
 )
 WITNESS_EXTERNAL_FIELDS = (
     "extSchoolName",
-    "extSchoolCity",
-    "extSchoolState",
+    "countryId",
+    "stateId",
+    "cityId",
     "gender",
     "grade",
     "age",
@@ -72,8 +74,9 @@ class WitnessBase(EmptyStrToNoneMixin):
     witnessStatement: str | None = None
     relationshipToVictim: RelationshipToVictim | None = None
     extSchoolName: str | None = None
-    extSchoolCity: str | None = None
-    extSchoolState: str | None = None
+    countryId: str | None = None
+    stateId: str | None = None
+    cityId: str | None = None
     gender: str | None = None
     age: int | None = Field(default=None, ge=0, le=120)
     howIdentified: str | None = None
@@ -116,8 +119,9 @@ class WitnessBase(EmptyStrToNoneMixin):
                 self,
                 (
                     "extSchoolName",
-                    "extSchoolCity",
-                    "extSchoolState",
+                    "countryId",
+                    "stateId",
+                    "cityId",
                     "gender",
                     "age",
                     "howIdentified",
@@ -129,7 +133,7 @@ class WitnessBase(EmptyStrToNoneMixin):
         elif self.relationship == PersonRelationship.EXTERNAL_STUDENT:
             require_fields(
                 self,
-                ("extSchoolName", "extSchoolCity", "extSchoolState"),
+                ("extSchoolName", "countryId", "stateId", "cityId"),
                 "relationship is EXTERNAL_STUDENT",
             )
             reject_fields(
@@ -166,8 +170,9 @@ class WitnessBase(EmptyStrToNoneMixin):
                     "witnessStatement",
                     "relationshipToVictim",
                     "extSchoolName",
-                    "extSchoolCity",
-                    "extSchoolState",
+                    "countryId",
+                    "stateId",
+                    "cityId",
                     "howIdentified",
                     "studentDetails",
                 ),
@@ -199,6 +204,12 @@ class WitnessOut(BaseModel):
     extSchoolName: str | None = None
     extSchoolCity: str | None = None
     extSchoolState: str | None = None
+    countryId: str | None = None
+    stateId: str | None = None
+    cityId: str | None = None
+    country: CountryResponse | None = None
+    state: StateResponse | None = None
+    city: CityResponse | None = None
     gender: str | None = None
     age: int | None = None
     howIdentified: str | None = None

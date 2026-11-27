@@ -36,7 +36,13 @@ CASE_INCLUDE = {
             "city": True,
         }
     },
-    "witnesses": True,
+    "witnesses": {
+        "include": {
+            "country": True,
+            "state": True,
+            "city": True,
+        }
+    },
     "evidence": True,
     "charity": True,
     "offense": True,
