@@ -201,7 +201,9 @@ def person_write_data(
         )
     data = apply_json_details(data, "physicalDetails", "vehicleDetails")
     if creating:
-        data["case"] = {"connect": {"id": case_id}}
+        # Use scalar caseId (unchecked input) so countryId/stateId/cityId FKs are allowed.
+        # Nested case.connect forces checked input, which rejects scalar FK fields.
+        data["caseId"] = case_id
         data = {key: value for key, value in data.items() if value is not None}
     return data
 
