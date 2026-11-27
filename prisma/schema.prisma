@@ -449,6 +449,12 @@ model Suspect {
   extSchoolName  String?
   extSchoolCity  String?
   extSchoolState String?
+  countryId      String?
+  country        Country? @relation(fields: [countryId], references: [id], onDelete: SetNull)
+  stateId        String?
+  state          State?   @relation(fields: [stateId], references: [id], onDelete: SetNull)
+  cityId         String?
+  city           City?    @relation(fields: [cityId], references: [id], onDelete: SetNull)
   gender         String?
   howIdentified  String?
 
@@ -468,6 +474,10 @@ model Suspect {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([countryId])
+  @@index([stateId])
+  @@index([cityId])
 }
 
 model Witness {
@@ -488,6 +498,12 @@ model Witness {
   extSchoolName  String?
   extSchoolCity  String?
   extSchoolState String?
+  countryId      String?
+  country        Country? @relation(fields: [countryId], references: [id], onDelete: SetNull)
+  stateId        String?
+  state          State?   @relation(fields: [stateId], references: [id], onDelete: SetNull)
+  cityId         String?
+  city           City?    @relation(fields: [cityId], references: [id], onDelete: SetNull)
   gender         String?
   age            Int?
   howIdentified  String?
@@ -507,6 +523,10 @@ model Witness {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([countryId])
+  @@index([stateId])
+  @@index([cityId])
 }
 
 model Evidence {
@@ -702,6 +722,8 @@ model Country {
   schools   School[]
   charities Charity[]
   students  Student[]
+  suspects  Suspect[]
+  witnesses Witness[]
 }
 
 model State {
@@ -716,6 +738,8 @@ model State {
   schools   School[]
   charities Charity[]
   students  Student[]
+  suspects  Suspect[]
+  witnesses Witness[]
 
   @@unique([countryId, stateCode])
 }
@@ -730,6 +754,8 @@ model City {
   schools   School[]
   charities Charity[]
   students  Student[]
+  suspects  Suspect[]
+  witnesses Witness[]
 
   @@index([stateId, name])
 }
