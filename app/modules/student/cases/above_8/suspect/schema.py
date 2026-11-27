@@ -17,6 +17,7 @@ from app.modules.student.cases.above_8.schema.validate import (
     reject_fields,
     require_fields,
 )
+from app.modules.location.schema import CityResponse, CountryResponse, StateResponse
 
 SUSPECT_SCHOOLMATE_FIELDS = (
     "grade",
@@ -26,8 +27,9 @@ SUSPECT_SCHOOLMATE_FIELDS = (
 )
 SUSPECT_EXTERNAL_FIELDS = (
     "extSchoolName",
-    "extSchoolCity",
-    "extSchoolState",
+    "countryId",
+    "stateId",
+    "cityId",
     "studentName",
     "grade",
     "gender",
@@ -66,8 +68,9 @@ class SuspectBase(EmptyStrToNoneMixin):
     studentImageUrl: str | None = None
     studentDetails: str | None = None
     extSchoolName: str | None = None
-    extSchoolCity: str | None = None
-    extSchoolState: str | None = None
+    countryId: str | None = None
+    stateId: str | None = None
+    cityId: str | None = None
     gender: str | None = None
     howIdentified: str | None = None
     organization: str | None = None
@@ -104,8 +107,9 @@ class SuspectBase(EmptyStrToNoneMixin):
                 self,
                 (
                     "extSchoolName",
-                    "extSchoolCity",
-                    "extSchoolState",
+                    "countryId",
+                    "stateId",
+                    "cityId",
                     "gender",
                     "howIdentified",
                 )
@@ -115,7 +119,13 @@ class SuspectBase(EmptyStrToNoneMixin):
         elif self.relationship == PersonRelationship.EXTERNAL_STUDENT:
             require_fields(
                 self,
-                ("extSchoolName", "extSchoolCity", "extSchoolState", "studentName"),
+                (
+                    "extSchoolName",
+                    "countryId",
+                    "stateId",
+                    "cityId",
+                    "studentName",
+                ),
                 "relationship is EXTERNAL_STUDENT",
             )
             reject_fields(
@@ -147,8 +157,9 @@ class SuspectBase(EmptyStrToNoneMixin):
                     "studentImageUrl",
                     "studentDetails",
                     "extSchoolName",
-                    "extSchoolCity",
-                    "extSchoolState",
+                    "countryId",
+                    "stateId",
+                    "cityId",
                     "howIdentified",
                 ),
                 "relationship is OTHERS",
@@ -189,6 +200,12 @@ class SuspectOut(BaseModel):
     extSchoolName: str | None = None
     extSchoolCity: str | None = None
     extSchoolState: str | None = None
+    countryId: str | None = None
+    stateId: str | None = None
+    cityId: str | None = None
+    country: CountryResponse | None = None
+    state: StateResponse | None = None
+    city: CityResponse | None = None
     gender: str | None = None
     howIdentified: str | None = None
     organization: str | None = None

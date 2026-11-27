@@ -29,7 +29,13 @@ CASE_VICTIM_INCLUDE = {
 CASE_INCLUDE = {
     **CASE_VICTIM_INCLUDE,
     "grade": True,
-    "suspects": True,
+    "suspects": {
+        "include": {
+            "country": True,
+            "state": True,
+            "city": True,
+        }
+    },
     "witnesses": True,
     "evidence": True,
     "charity": True,
